@@ -1,0 +1,17 @@
+# Bundler
+/vendor/bundle
+
+# Ruby
+*.gem
+.bundle/
+
+# Logs
+*.log
+
+# Environment files
+.env
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
