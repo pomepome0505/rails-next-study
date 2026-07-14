@@ -1,17 +1,17 @@
-# Bundler
-/vendor/bundle
+# Rails
+/backend/log/*
+/backend/tmp/*
+/backend/storage/*
+/backend/.env
 
 # Ruby
-*.gem
-.bundle/
+/backend/vendor/bundle
+/backend/.bundle
 
-# Logs
-*.log
-
-# Environment files
+# Docker / env
 .env
 
-# OS/editor
+# OS / Editor
 .DS_Store
 .vscode/
 .idea/
