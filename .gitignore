@@ -15,3 +15,6 @@
 .DS_Store
 .vscode/
 .idea/
+
+# REST Client
+api-requests/task.http

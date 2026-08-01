@@ -11,7 +11,7 @@ services:
       DATABASE_HOST: db
       DATABASE_USERNAME: app_user
       DATABASE_PASSWORD: password
-      DATABASE_NAME: rails_next_study_development
+      DATABASE_NAME: app_development
     tty: true
     stdin_open: true
 
@@ -22,9 +22,9 @@ services:
     environment:
       POSTGRES_USER: app_user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: rails_next_study_development
+      POSTGRES_DB: app_development
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app_user -d rails_next_study_development"]
+      test: ["CMD-SHELL", "pg_isready -U app_user -d app_development"]
       interval: 5s
       timeout: 5s
       retries: 5
