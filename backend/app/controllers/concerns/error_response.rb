@@ -21,7 +21,7 @@ module ErrorResponse
                     field: error.attribute,
                     code: error.type,
                     message: error.message,
-                    full_message: error.full_message,
+                    full_message: error.full_message
                 }
             end
         )

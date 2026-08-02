@@ -2,7 +2,7 @@
 module Paginatable
   module Mixin
     extend ActiveSupport::Concern
-    
+
     private
 
     def paginator

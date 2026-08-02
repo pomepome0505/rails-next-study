@@ -91,7 +91,7 @@ RSpec.describe Task, type: :model do
 
       result = described_class.recent
 
-      expect(result).to eq([new_task, old_task])
+      expect(result).to eq([ new_task, old_task ])
     end
   end
 end
