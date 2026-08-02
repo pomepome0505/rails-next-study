@@ -270,7 +270,7 @@ RSpec.describe "タスクAPI", type: :request do
           post "/api/tasks", params: params, as: :json
         }.not_to change(Task, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response_json).to match(
           "message" => "Validation failed",
           "errors" => contain_exactly(
@@ -294,7 +294,7 @@ RSpec.describe "タスクAPI", type: :request do
           post "/api/tasks", params: params, as: :json
         }.not_to change(Task, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response_json).to match(
           "message" => "Validation failed",
           "errors" => contain_exactly(
@@ -384,7 +384,7 @@ RSpec.describe "タスクAPI", type: :request do
 
         patch "/api/tasks/#{task.id}", params: params, as: :json
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response_json).to match(
           "message" => "Validation failed",
           "errors" => contain_exactly(

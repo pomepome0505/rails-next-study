@@ -14,7 +14,7 @@ module ErrorResponse
 
     def render_validation_errors(record)
         render_error(
-            status: :unprocessable_entity,
+            status: :unprocessable_content,
             message: "Validation failed",
             errors: record.errors.map do |error|
                 {
