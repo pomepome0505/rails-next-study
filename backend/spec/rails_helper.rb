@@ -45,6 +45,13 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
+  # テスト開始時にDBをクリーンにする（seedsや手動操作による汚染を防ぐ）
+  config.before(:suite) do
+    ActiveRecord::Base.connection.truncate_tables(
+      *ActiveRecord::Base.connection.tables - %w[schema_migrations ar_internal_metadata]
+    )
+  end
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 
