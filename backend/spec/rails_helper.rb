@@ -52,6 +52,15 @@ RSpec.configure do |config|
     )
   end
 
+  # N+1クエリの検出（config/environments/test.rb で raise = true を設定）
+  config.before(:each) do
+    Prosopite.scan
+  end
+
+  config.after(:each) do
+    Prosopite.finish
+  end
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 
