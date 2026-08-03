@@ -9,3 +9,21 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
 plugins:
   - rubocop-rspec
+
+AllCops:
+  NewCops: enable
+
+# 日本語でcontextを書いているため、when/with/withoutの規約は適用しない
+RSpec/ContextWording:
+  Enabled: false
+
+# リクエストspecではステータスとボディの両方を検証するため
+RSpec/MultipleExpectations:
+  Max: 5
+
+# レスポンス構造をmatchで一括検証するexampleがあるため
+RSpec/ExampleLength:
+  Max: 45
+
+RSpec/NestedGroups:
+  Max: 4

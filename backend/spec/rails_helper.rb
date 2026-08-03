@@ -53,11 +53,11 @@ RSpec.configure do |config|
   end
 
   # N+1クエリの検出（config/environments/test.rb で raise = true を設定）
-  config.before(:each) do
+  config.before do
     Prosopite.scan
   end
 
-  config.after(:each) do
+  config.after do
     Prosopite.finish
   end
 
