@@ -55,5 +55,6 @@ group :development, :test do
     gem "factory_bot_rails"
     gem "prosopite"
     gem "pg_query"   # PostgreSQL 用
+    gem "rubocop-rspec", require: false
   end
 end
