@@ -1,23 +1,28 @@
 class Task < ApplicationRecord
-    belongs_to :user
-    enum :status, {
-        todo: "todo",
-        in_progress: "in_progress",
-        done: "done"
-    }, validate: true
+  SORTABLE_COLUMNS = %w[created_at due_date].freeze
+  ORDERS           = %w[asc desc].freeze
 
-    validates :title, presence: true
+  belongs_to :user
 
-    scope :with_status, ->(status) {
-        where(status: statuses.fetch(status))
-    }
+  enum :status, {
+    todo: "todo",
+    in_progress: "in_progress",
+    done: "done"
+  }, validate: true
 
-    scope :order_by_due_date, ->(direction) {
-        order(Arel.sql("due_date IS NULL"))
-        .order(due_date: direction.to_sym)
-    }
+  validates :title, presence: true
 
-    scope :recent, -> {
-        order(created_at: :desc)
-    }
+  scope :assigned_to, ->(user) { where(user: user) }
+
+  scope :with_status, ->(status) {
+    where(status: statuses.fetch(status))
+  }
+
+  # column は Arel.sql でSQLに直接展開するため、インジェクションを防ぐ検証が必要
+  scope :sorted_by, ->(column, direction) {
+    raise ArgumentError, "Invalid column: #{column}" unless SORTABLE_COLUMNS.include?(column.to_s)
+
+    order(Arel.sql("#{column} IS NULL"))
+      .order(column.to_sym => direction.to_sym, id: direction.to_sym)
+  }
 end

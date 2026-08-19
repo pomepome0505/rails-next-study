@@ -38,7 +38,17 @@ RSpec.describe Task, type: :model do
     end
   end
 
-  describe ".scope" do
+  describe ".assigned_to" do
+    it "指定したユーザーのタスクだけを取得する" do
+      owner = create(:user)
+      own_task = create(:task, user: owner)
+      create(:task, user: create(:user))
+
+      expect(described_class.assigned_to(owner)).to contain_exactly(own_task)
+    end
+  end
+
+  describe ".with_status" do
     context "statusを指定した場合" do
       it "指定したstatusのタスクだけを取得する" do
         todo_task = create(:task, status: :todo)
@@ -51,47 +61,64 @@ RSpec.describe Task, type: :model do
     end
   end
 
-  describe ".order_by_due_date" do
-    context "ascを指定した場合" do
+  describe ".sorted_by" do
+    context "due_dateを昇順で指定した場合" do
       it "due_dateの昇順で並び、nilは末尾に置く" do
-        no_due_task = create(:task, due_date: nil)
-        later_task = create(:task, due_date: Date.new(2026, 7, 30))
-        earlier_task = create(:task, due_date: Date.new(2026, 7, 20))
+        user = create(:user)
+        no_due_date = create(:task, user: user, due_date: nil)
+        later       = create(:task, user: user, due_date: Date.new(2026, 7, 30))
+        earlier     = create(:task, user: user, due_date: Date.new(2026, 7, 20))
 
-        result = described_class.order_by_due_date("asc")
+        result = described_class.sorted_by("due_date", "asc")
 
-        expect(result).to eq([ earlier_task, later_task, no_due_task ])
+        expect(result.map(&:id)).to eq([ earlier.id, later.id, no_due_date.id ])
       end
     end
 
-    context "descを指定した場合" do
+    context "due_dateを降順で指定した場合" do
       it "due_dateの降順で並び、nilは末尾に置く" do
-        no_due_task = create(:task, due_date: nil)
-        earlier_task = create(:task, due_date: Date.new(2026, 7, 20))
-        later_task = create(:task, due_date: Date.new(2026, 7, 30))
+        user = create(:user)
+        no_due_date = create(:task, user: user, due_date: nil)
+        earlier     = create(:task, user: user, due_date: Date.new(2026, 7, 20))
+        later       = create(:task, user: user, due_date: Date.new(2026, 7, 30))
 
-        result = described_class.order_by_due_date("desc")
+        result = described_class.sorted_by("due_date", "desc")
 
-        expect(result).to eq([ later_task, earlier_task, no_due_task ])
+        expect(result.map(&:id)).to eq([ later.id, earlier.id, no_due_date.id ])
       end
     end
-  end
 
-  describe ".recent" do
-    it "created_atの降順でタスクを取得する" do
-      new_task = create(
-        :task,
-        created_at: Time.zone.local(2026, 7, 2, 10, 0, 0)
-      )
-      old_task = create(
-        :task,
-        created_at: Time.zone.local(2026, 7, 1, 10, 0, 0)
-      )
+    context "created_atを降順で指定した場合" do
+      it "created_atの降順で並ぶ" do
+        user   = create(:user)
+        older  = create(:task, user: user, created_at: 2.days.ago)
+        newer  = create(:task, user: user, created_at: 1.day.ago)
 
+        result = described_class.sorted_by("created_at", "desc")
 
-      result = described_class.recent
+        expect(result.map(&:id)).to eq([ newer.id, older.id ])
+      end
+    end
 
-      expect(result).to eq([ new_task, old_task ])
+    context "同じ値のレコードが複数ある場合" do
+      it "idで順序が安定する" do
+        user  = create(:user)
+        due   = Date.new(2026, 7, 20)
+        first  = create(:task, user: user, due_date: due)
+        second = create(:task, user: user, due_date: due)
+        third  = create(:task, user: user, due_date: due)
+
+        result = described_class.sorted_by("due_date", "asc")
+
+        expect(result.map(&:id)).to eq([ first.id, second.id, third.id ])
+      end
+    end
+
+    context "許可されていないカラムを指定した場合" do
+      it "ArgumentErrorが発生する" do
+        expect { described_class.sorted_by("title", "asc") }
+          .to raise_error(ArgumentError)
+      end
     end
   end
 end

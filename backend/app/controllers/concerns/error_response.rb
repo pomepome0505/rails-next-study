@@ -27,6 +27,21 @@ module ErrorResponse
         )
     end
 
+    def render_invalid_params(record)
+        render_error(
+            status: :bad_request,
+            message: "Invalid parameters",
+            errors: record.errors.map do |error|
+                {
+                    field: error.attribute,
+                    code: error.type,
+                    message: error.message,
+                    full_message: error.full_message
+                }
+            end
+        )
+    end
+
     def render_not_found
         render_error(
             status: :not_found,

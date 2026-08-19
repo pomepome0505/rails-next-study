@@ -12,6 +12,7 @@ services:
       DATABASE_USERNAME: app_user
       DATABASE_PASSWORD: password
       DATABASE_NAME: app_development
+      FRONTEND_ORIGIN: http://localhost:3001
     tty: true
     stdin_open: true
 
@@ -50,6 +51,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP
 
 volumes:
   postgres_data:

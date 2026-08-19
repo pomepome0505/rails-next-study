@@ -1,4 +1,3 @@
-# app/controllers/concerns/paginatable.rb
 module Paginatable
   module Mixin
     extend ActiveSupport::Concern

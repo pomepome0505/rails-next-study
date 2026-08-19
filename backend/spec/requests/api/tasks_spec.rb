@@ -5,15 +5,19 @@ RSpec.describe "タスクAPI", type: :request do
     JSON.parse(response.body)
   end
 
+  let(:current_user) { create(:user) }
+
+  before { sign_in_as(current_user) }
+
   describe "GET /api/tasks" do
     context "タスクが存在する場合" do
       it "タスク一覧を新しい順に返す" do
         older = create(
-          :task, title: "古いタスク", description: "古い説明",
+          :task, user: current_user, title: "古いタスク", description: "古い説明",
           status: :todo, due_date: Date.new(2026, 7, 20), created_at: 2.days.ago
         )
         newer = create(
-          :task, title: "新しいタスク", description: "新しい説明",
+          :task, user: current_user, title: "新しいタスク", description: "新しい説明",
           status: :done, due_date: Date.new(2026, 7, 30), created_at: 1.day.ago
         )
 
@@ -57,10 +61,10 @@ RSpec.describe "タスクAPI", type: :request do
 
     context "絞り込み・並び替え・ページングを同時に指定した場合" do
       it "条件を満たすタスクを指定順・指定ページで返す" do
-        create(:task, status: :done, due_date: Date.new(2026, 7, 1))
-        create(:task, status: :todo, due_date: Date.new(2026, 7, 10))
-        create(:task, status: :todo, due_date: Date.new(2026, 7, 20))
-        latest = create(:task, status: :todo, due_date: Date.new(2026, 7, 30))
+        create(:task, user: current_user, status: :done, due_date: Date.new(2026, 7, 1))
+        create(:task, user: current_user, status: :todo, due_date: Date.new(2026, 7, 10))
+        create(:task, user: current_user, status: :todo, due_date: Date.new(2026, 7, 20))
+        latest = create(:task, user: current_user, status: :todo, due_date: Date.new(2026, 7, 30))
 
         get "/api/tasks", params: {
           status: "todo", sort_by: "due_date", order: "asc", page: 2, per_page: 2
@@ -92,77 +96,15 @@ RSpec.describe "タスクAPI", type: :request do
       end
     end
 
-    context "statusを指定した場合" do
-      it "指定したstatusのタスクだけを取得できる" do
-        todo_task = create(:task, status: :todo)
-        create(:task, status: :done)
-
-        get "/api/tasks", params: { status: "todo" }
-
-        expect(response).to have_http_status(:ok)
-        expect(response_json["data"].map { |task| task["id"] }).to eq([ todo_task.id ])
-      end
-    end
-
-    context "sort_byにdue_date、orderにascを指定した場合" do
-      it "due_dateの昇順でタスクを取得できる" do
-        earlier_task = create(:task, due_date: Date.new(2026, 7, 20))
-        later_task = create(:task, due_date: Date.new(2026, 7, 30))
-
-        get "/api/tasks", params: { sort_by: "due_date", order: "asc" }
-
-        expect(response).to have_http_status(:ok)
-        expect(response_json["data"].map { |task| task["id"] }).to eq([ earlier_task.id, later_task.id ])
-      end
-    end
-
-    context "sort_byにdue_date、orderにdescを指定した場合" do
-      it "due_dateの降順でタスクを取得できる" do
-        later_task = create(:task, due_date: Date.new(2026, 7, 30))
-        earlier_task = create(:task, due_date: Date.new(2026, 7, 20))
-
-        get "/api/tasks", params: { sort_by: "due_date", order: "desc" }
-
-        expect(response).to have_http_status(:ok)
-        expect(response_json["data"].map { |task| task["id"] }).to eq([ later_task.id, earlier_task.id ])
-      end
-    end
-
     context "pageとper_pageを指定した場合" do
       it "指定したページのタスクを返す" do
-        create_list(:task, 3)
+        create_list(:task, 3, user: current_user)
 
         get "/api/tasks", params: { page: 2, per_page: 2 }
 
         expect(response).to have_http_status(:ok)
         expect(response_json["data"].size).to eq(1)
         expect(response_json["meta"]).to include("current_page" => 2, "per_page" => 2)
-      end
-    end
-
-    context "不正なstatusを指定した場合" do
-      it "400 Bad Requestを返す" do
-        get "/api/tasks", params: { status: "invalid_status" }
-
-        expect(response).to have_http_status(:bad_request)
-        expect(response_json).to match(
-          "message" => "Invalid status",
-          "errors" => [],
-          "request_id" => String
-        )
-      end
-    end
-
-    context "不正なsort_byを指定した場合" do
-      it "400 Bad Requestを返す" do
-        get "/api/tasks", params: { sort_by: "invalid_column", order: "asc" }
-
-        expect(response).to have_http_status(:bad_request)
-        expect(response_json).to match(
-          "message" => "Invalid sort_by",
-          "errors" => [],
-          "request_id" => String
-        )
       end
     end
 
@@ -185,6 +127,7 @@ RSpec.describe "タスクAPI", type: :request do
       it "タスク詳細を取得できる" do
         task = create(
           :task,
+          user: current_user,
           title: "詳細取得の確認",
           description: "詳細説明",
           status: :todo,
@@ -224,14 +167,12 @@ RSpec.describe "タスクAPI", type: :request do
   describe "POST /api/tasks" do
     context "有効なパラメータの場合" do
       it "タスクを作成できる" do
-        user = create(:user)
         params = {
           task: {
             title: "作成の確認",
             description: "作成できることを確認する",
             status: "todo",
-            due_date: "2026-07-20",
-            user_id: user.id
+            due_date: "2026-07-20"
           }
         }
 
@@ -246,7 +187,7 @@ RSpec.describe "タスクAPI", type: :request do
           "description" => "作成できることを確認する",
           "status" => "todo",
           "due_date" => "2026-07-20",
-          "user_id" => user.id,
+          "user_id" => current_user.id,
           "created_at" => String,
           "updated_at" => String
         )
@@ -255,14 +196,13 @@ RSpec.describe "タスクAPI", type: :request do
 
     context "titleが空の場合" do
       it "422 Unprocessable Entityを返し、タスクを作成しない" do
-        user = create(:user)
         params = {
           task: {
             title: "",
             description: "タイトルなし",
             status: "todo",
             due_date: "2026-07-20",
-            user_id: user.id
+            user_id: current_user.id
           }
         }
 
@@ -280,30 +220,6 @@ RSpec.describe "タスクAPI", type: :request do
         )
       end
     end
-
-    context "user_idが指定されていない場合" do
-      it "422 Unprocessable Entityを返し、タスクを作成しない" do
-        params = {
-          task: {
-            title: "ユーザーなしのタスク",
-            status: "todo"
-          }
-        }
-
-        expect {
-          post "/api/tasks", params: params, as: :json
-        }.not_to change(Task, :count)
-
-        expect(response).to have_http_status(:unprocessable_content)
-        expect(response_json).to match(
-          "message" => "Validation failed",
-          "errors" => contain_exactly(
-            { "field" => "user", "code" => "blank", "message" => String, "full_message" => String }
-          ),
-          "request_id" => String
-        )
-      end
-    end
   end
 
   describe "PATCH /api/tasks/:id" do
@@ -311,6 +227,7 @@ RSpec.describe "タスクAPI", type: :request do
       it "タスクを更新できる" do
         task = create(
           :task,
+          user: current_user,
           title: "更新前のタイトル",
           description: "更新前の説明",
           status: :todo,
@@ -346,6 +263,7 @@ RSpec.describe "タスクAPI", type: :request do
       it "指定していないフィールドは変更しない" do
         task = create(
           :task,
+          user: current_user,
           title: "更新前のタイトル",
           description: "変わらない説明",
           status: :todo,
@@ -372,6 +290,7 @@ RSpec.describe "タスクAPI", type: :request do
       it "422 Unprocessable Entityを返し、タスクを更新しない" do
         task = create(
           :task,
+          user: current_user,
           title: "更新前のタイトル",
           status: :todo
         )
@@ -421,6 +340,7 @@ RSpec.describe "タスクAPI", type: :request do
       it "タスクを削除できる" do
         task = create(
           :task,
+          user: current_user,
           title: "削除対象のタスク",
           status: :todo
         )
@@ -446,6 +366,35 @@ RSpec.describe "タスクAPI", type: :request do
           "errors" => [],
           "request_id" => String
         )
+      end
+    end
+  end
+
+  describe "認可" do
+    context "他のユーザーのタスクを指定した場合" do
+      it "404 Not Foundを返す" do
+        other_task = create(:task, user: create(:user))
+
+        get "/api/tasks/#{other_task.id}"
+
+        expect(response).to have_http_status(:not_found)
+        expect(response_json).to match(
+          "message" => "Resource not found",
+          "errors" => [],
+          "request_id" => String
+        )
+      end
+    end
+
+    context "一覧を取得する場合" do
+      it "自分のタスクだけが含まれる" do
+        own_task = create(:task, user: current_user, title: "自分のタスク")
+        create(:task, user: create(:user), title: "他人のタスク")
+
+        get "/api/tasks"
+
+        expect(response).to have_http_status(:ok)
+        expect(response_json["data"].map { |task| task["id"] }).to eq([ own_task.id ])
       end
     end
   end

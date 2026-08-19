@@ -45,6 +45,9 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
+  # travel_to / travel / freeze_time を使えるようにする
+  config.include ActiveSupport::Testing::TimeHelpers
+
   # テスト開始時にDBをクリーンにする（seedsや手動操作による汚染を防ぐ）
   config.before(:suite) do
     ActiveRecord::Base.connection.truncate_tables(
