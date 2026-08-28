@@ -58,3 +58,7 @@ group :development, :test do
     gem "rubocop-rspec", require: false
   end
 end
+
+group :test do
+  gem "openapi_first"
+end
