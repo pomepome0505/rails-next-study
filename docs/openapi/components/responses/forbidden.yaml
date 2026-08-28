@@ -1,0 +1,5 @@
+description: 認証済みだが操作する権限がない
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/error.yaml'

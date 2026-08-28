@@ -88,4 +88,20 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+
+  require "openapi_first"
+
+  OpenapiFirst::Test.setup do |test|
+    test.register("/docs/openapi.bundled.yaml")
+
+    test.skip_response_coverage do |response_definition|
+      # 429: テスト環境のキャッシュストアが :null_store のため検証できない
+      # 401: 認証の検証は users_spec に集約している
+      %w[401 429].include?(response_definition.status)
+    end
+  end
+
+  RSpec.configure do |config|
+    config.include OpenapiFirst::Test::Methods[Rails.application], type: :request
+  end
 end

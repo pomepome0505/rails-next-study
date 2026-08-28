@@ -1,0 +1,104 @@
+get:
+  summary: タスク一覧を取得する
+  description: |
+    ログイン中のユーザーが担当するタスクのみを返す。
+    絞り込み・並び替え・ページングを指定できる。
+  tags:
+    - Tasks
+  parameters:
+    - name: status
+      in: query
+      description: 進捗状態で絞り込む。指定しない場合は絞り込まない
+      required: false
+      schema:
+        type: string
+        enum: [todo, in_progress, done]
+    - name: sort_by
+      in: query
+      description: 並び替えに使う項目
+      required: false
+      schema:
+        type: string
+        enum: [created_at, due_date]
+        default: created_at
+    - name: order
+      in: query
+      description: 並び順
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+    - $ref: '../../components/parameters/page.yaml'
+    - $ref: '../../components/parameters/per_page.yaml'
+  responses:
+    '200':
+      description: 取得成功
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+              - meta
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '../../components/schemas/task.yaml'
+              meta:
+                $ref: '../../components/schemas/pagination_meta.yaml'
+    '400':
+      $ref: '../../components/responses/bad_request.yaml'
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
+
+post:
+  summary: タスクを作成する
+  description: |
+    担当者はログイン中のユーザーになる。リクエストで指定することはできない。
+  tags:
+    - Tasks
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - task
+          properties:
+            task:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                  description: タイトル
+                  examples: ["買い物に行く"]
+                description:
+                  type: [string, "null"]
+                  description: 詳細
+                  examples: ["牛乳とパンを買う"]
+                status:
+                  type: string
+                  enum: [todo, in_progress, done]
+                  description: 進捗状態
+                  default: todo
+                due_date:
+                  type: [string, "null"]
+                  format: date
+                  description: 期限日
+                  examples: ["2026-07-20"]
+  responses:
+    '201':
+      description: 作成成功
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/task.yaml'
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
+    '422':
+      $ref: '../../components/responses/unprocessable_content.yaml'

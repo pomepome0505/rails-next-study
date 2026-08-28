@@ -1,0 +1,4 @@
+FROM node:22-alpine
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+WORKDIR /docs

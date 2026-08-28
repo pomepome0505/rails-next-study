@@ -18,3 +18,7 @@
 
 # REST Client
 api-requests/task.http
+
+# OpenAPI
+docs/node_modules/
+docs/.pnpm-store/

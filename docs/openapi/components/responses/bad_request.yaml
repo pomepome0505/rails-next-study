@@ -1,0 +1,5 @@
+description: リクエストパラメータが不正
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/error.yaml'

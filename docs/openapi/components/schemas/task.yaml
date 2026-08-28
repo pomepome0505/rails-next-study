@@ -1,0 +1,48 @@
+type: object
+description: タスク
+required:
+  - id
+  - title
+  - description
+  - status
+  - due_date
+  - user_id
+  - created_at
+  - updated_at
+properties:
+  id:
+    type: integer
+    description: タスクID
+    examples: [1]
+  title:
+    type: string
+    description: タイトル
+    examples: ["買い物に行く"]
+  description:
+    type: [string, "null"]
+    description: 詳細
+    examples: ["牛乳とパンを買う"]
+  status:
+    type: string
+    enum: [todo, in_progress, done]
+    description: 進捗状態
+    examples: ["todo"]
+  due_date:
+    type: [string, "null"]
+    format: date
+    description: 期限日
+    examples: ["2026-07-20"]
+  user_id:
+    type: integer
+    description: 担当者のユーザーID
+    examples: [1]
+  created_at:
+    type: string
+    format: date-time
+    description: 作成日時
+    examples: ["2026-08-19T04:54:21.000Z"]
+  updated_at:
+    type: string
+    format: date-time
+    description: 更新日時
+    examples: ["2026-08-19T04:54:21.000Z"]

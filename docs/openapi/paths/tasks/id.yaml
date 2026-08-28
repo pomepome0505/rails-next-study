@@ -1,0 +1,83 @@
+parameters:
+  - name: id
+    in: path
+    required: true
+    description: タスクID
+    schema:
+      type: integer
+
+get:
+  summary: タスクを取得する
+  description: |
+    他のユーザーが担当するタスクを指定した場合、存在を秘匿するため 404 を返す。
+  tags:
+    - Tasks
+  responses:
+    '200':
+      description: 取得成功
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/task.yaml'
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
+    '404':
+      $ref: '../../components/responses/not_found.yaml'
+
+patch:
+  summary: タスクを更新する
+  description: |
+    指定した項目のみを更新する。指定しなかった項目は変更されない。
+  tags:
+    - Tasks
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - task
+          properties:
+            task:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: タイトル
+                description:
+                  type: [string, "null"]
+                  description: 詳細
+                status:
+                  type: string
+                  enum: [todo, in_progress, done]
+                  description: 進捗状態
+                due_date:
+                  type: [string, "null"]
+                  format: date
+                  description: 期限日
+  responses:
+    '200':
+      description: 更新成功
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/task.yaml'
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
+    '404':
+      $ref: '../../components/responses/not_found.yaml'
+    '422':
+      $ref: '../../components/responses/unprocessable_content.yaml'
+
+delete:
+  summary: タスクを削除する
+  tags:
+    - Tasks
+  responses:
+    '204':
+      description: 削除成功
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
+    '404':
+      $ref: '../../components/responses/not_found.yaml'

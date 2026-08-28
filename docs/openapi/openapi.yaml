@@ -1,0 +1,60 @@
+openapi: 3.1.0
+
+info:
+  title: タスク管理API
+  version: 1.0.0
+  description: |
+    タスク管理アプリケーションのAPI。
+
+    ## 認証
+
+    Cookie セッションによる認証を行う。
+    `POST /api/session` に成功すると HttpOnly Cookie が発行され、
+    以降のリクエストに自動で付与される。
+
+    Cookie は JavaScript から読めないため、ログイン状態の判定には
+    `GET /api/me` を使う。
+
+    ## エラーレスポンス
+
+    エラー時は共通の形式で返す。`errors` の `field` と `code` は
+    機械可読なため、表示文言はクライアント側で組み立てる。
+
+servers:
+  - url: http://localhost:8080
+    description: 開発環境（nginx 経由）
+
+tags:
+  - name: Sessions
+    description: ログイン・ログアウト
+  - name: Users
+    description: ユーザー情報
+  - name: PasswordResets
+    description: パスワード再設定
+  - name: Tasks
+    description: タスク
+
+security:
+  - cookieAuth: []
+
+paths:
+  /api/session:
+    $ref: './paths/sessions/index.yaml'
+  /api/me:
+    $ref: './paths/users/me.yaml'
+  /api/password_resets:
+    $ref: './paths/password_resets/index.yaml'
+  /api/password_resets/{token}:
+    $ref: './paths/password_resets/token.yaml'
+  /api/tasks:
+    $ref: './paths/tasks/index.yaml'
+  /api/tasks/{id}:
+    $ref: './paths/tasks/id.yaml'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: ログイン時に発行されるセッションID
