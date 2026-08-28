@@ -1,0 +1,24 @@
+type: object
+description: バリデーションエラーの詳細
+required:
+  - field
+  - code
+  - message
+  - full_message
+properties:
+  field:
+    type: string
+    description: エラーが発生した項目名
+    examples: ["title"]
+  code:
+    type: string
+    description: エラーの種別を表す機械可読なコード
+    examples: ["blank"]
+  message:
+    type: string
+    description: 項目名を含まないエラーメッセージ
+    examples: ["can't be blank"]
+  full_message:
+    type: string
+    description: 項目名を含むエラーメッセージ
+    examples: ["Title can't be blank"]

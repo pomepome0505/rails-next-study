@@ -4,6 +4,8 @@ services:
       context: ./backend
     volumes:
       - ./backend:/app
+      - ./docs:/docs
+      - bundle_data:/usr/local/bundle
     depends_on:
       db:
         condition: service_healthy
@@ -56,7 +58,25 @@ services:
     ports:
       - "8025:8025" # Web UI
       - "1025:1025" # SMTP
+  openapi:
+    build:
+      context: ./docs
+    volumes:
+      - ./docs:/docs
+      - openapi_node_modules:/docs/node_modules
+    profiles: ["tools"]
+  
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./docs/openapi.bundled.yaml:/openapi.yaml:ro
+    environment:
+      SWAGGER_JSON: /openapi.yaml
 
 volumes:
   postgres_data:
   pgadmin_data:
+  bundle_data:
+  openapi_node_modules:

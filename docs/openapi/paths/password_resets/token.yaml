@@ -1,0 +1,40 @@
+put:
+  summary: パスワードを再設定する
+  description: |
+    トークンの有効期限は30分。
+    再設定に成功すると、そのユーザーの全セッションが破棄される。
+  tags:
+    - PasswordResets
+  security: []
+  parameters:
+    - name: token
+      in: path
+      required: true
+      description: 再設定メールに含まれるトークン
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - password
+            - password_confirmation
+          properties:
+            password:
+              type: string
+              format: password
+              description: 新しいパスワード
+            password_confirmation:
+              type: string
+              format: password
+              description: 新しいパスワード（確認用）
+  responses:
+    '204':
+      description: 再設定成功
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
+    '422':
+      $ref: '../../components/responses/unprocessable_content.yaml'

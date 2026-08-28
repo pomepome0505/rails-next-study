@@ -1,0 +1,11 @@
+name: page
+in: query
+description: 取得するページ番号
+required: false
+schema:
+  type: integer
+  minimum: 1
+  default: 1
+examples:
+  first:
+    value: 1

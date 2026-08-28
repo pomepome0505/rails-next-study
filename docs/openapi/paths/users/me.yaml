@@ -1,0 +1,16 @@
+get:
+  summary: ログイン中のユーザー情報を取得する
+  description: |
+    Cookie は HttpOnly のためブラウザの JavaScript から読めない。
+    ログイン状態の判定にはこのエンドポイントを使う。
+  tags:
+    - Users
+  responses:
+    '200':
+      description: 取得成功
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/user.yaml'
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'

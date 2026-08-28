@@ -1,0 +1,20 @@
+type: object
+description: エラーレスポンス
+required:
+  - message
+  - errors
+  - request_id
+properties:
+  message:
+    type: string
+    description: エラーの概要
+    examples: ["Validation failed"]
+  errors:
+    type: array
+    description: 項目ごとのエラー詳細。項目に紐づかないエラーの場合は空配列
+    items:
+      $ref: './error_detail.yaml'
+  request_id:
+    type: string
+    description: リクエストの識別子。問い合わせ時にログと突合するために使う
+    examples: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]

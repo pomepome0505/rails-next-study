@@ -1,0 +1,11 @@
+{
+  "name": "openapi-docs",
+  "private": true,
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "bundle": "redocly bundle openapi/openapi.yaml -o openapi.bundled.yaml"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^2.47.0"
+  }
+}

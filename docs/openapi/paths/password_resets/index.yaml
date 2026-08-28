@@ -1,0 +1,31 @@
+post:
+  summary: パスワード再設定メールを送信する
+  description: |
+    メールアドレスの登録有無にかかわらず同じレスポンスを返す。
+    登録済みかどうかを判別させないための仕様。
+  tags:
+    - PasswordResets
+  security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - email
+          properties:
+            email:
+              type: string
+              format: email
+              description: メールアドレス
+              examples: ["alice@example.com"]
+  responses:
+    '202':
+      description: リクエストを受け付けた
+    '429':
+      description: 短時間に多数のリクエストを送信した
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error.yaml'

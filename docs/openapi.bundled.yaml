@@ -1,0 +1,643 @@
+openapi: 3.1.0
+info:
+  title: タスク管理API
+  version: 1.0.0
+  description: |
+    タスク管理アプリケーションのAPI。
+
+    ## 認証
+
+    Cookie セッションによる認証を行う。
+    `POST /api/session` に成功すると HttpOnly Cookie が発行され、
+    以降のリクエストに自動で付与される。
+
+    Cookie は JavaScript から読めないため、ログイン状態の判定には
+    `GET /api/me` を使う。
+
+    ## エラーレスポンス
+
+    エラー時は共通の形式で返す。`errors` の `field` と `code` は
+    機械可読なため、表示文言はクライアント側で組み立てる。
+servers:
+  - url: http://localhost:8080
+    description: 開発環境（nginx 経由）
+security:
+  - cookieAuth: []
+tags:
+  - name: Sessions
+    description: ログイン・ログアウト
+  - name: Users
+    description: ユーザー情報
+  - name: PasswordResets
+    description: パスワード再設定
+  - name: Tasks
+    description: タスク
+paths:
+  /api/session:
+    post:
+      summary: ログインする
+      description: |
+        メールアドレスとパスワードで認証し、セッションを作成する。
+        成功するとセッションIDを含む HttpOnly Cookie が発行される。
+      tags:
+        - Sessions
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: メールアドレス。大文字小文字と前後の空白は無視される
+                  examples:
+                    - alice@example.com
+                password:
+                  type: string
+                  format: password
+                  description: パスワード
+                  examples:
+                    - password123
+      responses:
+        '201':
+          description: ログイン成功
+          headers:
+            Set-Cookie:
+              description: セッションIDを含む Cookie
+              schema:
+                type: string
+                examples:
+                  - session_id=...; path=/; httponly; samesite=lax
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '429':
+          description: 短時間に多数のリクエストを送信した
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+    delete:
+      summary: ログアウトする
+      description: |
+        現在のセッションを破棄する。
+      tags:
+        - Sessions
+      responses:
+        '204':
+          description: ログアウト成功
+        '401':
+          $ref: '#/components/responses/unauthorized'
+  /api/me:
+    get:
+      summary: ログイン中のユーザー情報を取得する
+      description: |
+        Cookie は HttpOnly のためブラウザの JavaScript から読めない。
+        ログイン状態の判定にはこのエンドポイントを使う。
+      tags:
+        - Users
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+  /api/password_resets:
+    post:
+      summary: パスワード再設定メールを送信する
+      description: |
+        メールアドレスの登録有無にかかわらず同じレスポンスを返す。
+        登録済みかどうかを判別させないための仕様。
+      tags:
+        - PasswordResets
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: メールアドレス
+                  examples:
+                    - alice@example.com
+      responses:
+        '202':
+          description: リクエストを受け付けた
+        '429':
+          description: 短時間に多数のリクエストを送信した
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+  /api/password_resets/{token}:
+    put:
+      summary: パスワードを再設定する
+      description: |
+        トークンの有効期限は30分。
+        再設定に成功すると、そのユーザーの全セッションが破棄される。
+      tags:
+        - PasswordResets
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: 再設定メールに含まれるトークン
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+                - password_confirmation
+              properties:
+                password:
+                  type: string
+                  format: password
+                  description: 新しいパスワード
+                password_confirmation:
+                  type: string
+                  format: password
+                  description: 新しいパスワード（確認用）
+      responses:
+        '204':
+          description: 再設定成功
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '422':
+          $ref: '#/components/responses/unprocessable_content'
+  /api/tasks:
+    get:
+      summary: タスク一覧を取得する
+      description: |
+        ログイン中のユーザーが担当するタスクのみを返す。
+        絞り込み・並び替え・ページングを指定できる。
+      tags:
+        - Tasks
+      parameters:
+        - name: status
+          in: query
+          description: 進捗状態で絞り込む。指定しない場合は絞り込まない
+          required: false
+          schema:
+            type: string
+            enum:
+              - todo
+              - in_progress
+              - done
+        - name: sort_by
+          in: query
+          description: 並び替えに使う項目
+          required: false
+          schema:
+            type: string
+            enum:
+              - created_at
+              - due_date
+            default: created_at
+        - name: order
+          in: query
+          description: 並び順
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/task'
+                  meta:
+                    $ref: '#/components/schemas/pagination_meta'
+        '400':
+          $ref: '#/components/responses/bad_request'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+    post:
+      summary: タスクを作成する
+      description: |
+        担当者はログイン中のユーザーになる。リクエストで指定することはできない。
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task
+              properties:
+                task:
+                  type: object
+                  required:
+                    - title
+                  properties:
+                    title:
+                      type: string
+                      description: タイトル
+                      examples:
+                        - 買い物に行く
+                    description:
+                      type:
+                        - string
+                        - 'null'
+                      description: 詳細
+                      examples:
+                        - 牛乳とパンを買う
+                    status:
+                      type: string
+                      enum:
+                        - todo
+                        - in_progress
+                        - done
+                      description: 進捗状態
+                      default: todo
+                    due_date:
+                      type:
+                        - string
+                        - 'null'
+                      format: date
+                      description: 期限日
+                      examples:
+                        - '2026-07-20'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/task'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '422':
+          $ref: '#/components/responses/unprocessable_content'
+  /api/tasks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: タスクID
+        schema:
+          type: integer
+    get:
+      summary: タスクを取得する
+      description: |
+        他のユーザーが担当するタスクを指定した場合、存在を秘匿するため 404 を返す。
+      tags:
+        - Tasks
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/task'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '404':
+          $ref: '#/components/responses/not_found'
+    patch:
+      summary: タスクを更新する
+      description: |
+        指定した項目のみを更新する。指定しなかった項目は変更されない。
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task
+              properties:
+                task:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                      description: タイトル
+                    description:
+                      type:
+                        - string
+                        - 'null'
+                      description: 詳細
+                    status:
+                      type: string
+                      enum:
+                        - todo
+                        - in_progress
+                        - done
+                      description: 進捗状態
+                    due_date:
+                      type:
+                        - string
+                        - 'null'
+                      format: date
+                      description: 期限日
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/task'
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '404':
+          $ref: '#/components/responses/not_found'
+        '422':
+          $ref: '#/components/responses/unprocessable_content'
+    delete:
+      summary: タスクを削除する
+      tags:
+        - Tasks
+      responses:
+        '204':
+          description: 削除成功
+        '401':
+          $ref: '#/components/responses/unauthorized'
+        '404':
+          $ref: '#/components/responses/not_found'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: ログイン時に発行されるセッションID
+  schemas:
+    user:
+      type: object
+      description: ユーザー
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: integer
+          description: ユーザーID
+          examples:
+            - 1
+        name:
+          type: string
+          description: 表示名
+          examples:
+            - Alice
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          examples:
+            - alice@example.com
+    error_detail:
+      type: object
+      description: バリデーションエラーの詳細
+      required:
+        - field
+        - code
+        - message
+        - full_message
+      properties:
+        field:
+          type: string
+          description: エラーが発生した項目名
+          examples:
+            - title
+        code:
+          type: string
+          description: エラーの種別を表す機械可読なコード
+          examples:
+            - blank
+        message:
+          type: string
+          description: 項目名を含まないエラーメッセージ
+          examples:
+            - can't be blank
+        full_message:
+          type: string
+          description: 項目名を含むエラーメッセージ
+          examples:
+            - Title can't be blank
+    error:
+      type: object
+      description: エラーレスポンス
+      required:
+        - message
+        - errors
+        - request_id
+      properties:
+        message:
+          type: string
+          description: エラーの概要
+          examples:
+            - Validation failed
+        errors:
+          type: array
+          description: 項目ごとのエラー詳細。項目に紐づかないエラーの場合は空配列
+          items:
+            $ref: '#/components/schemas/error_detail'
+        request_id:
+          type: string
+          description: リクエストの識別子。問い合わせ時にログと突合するために使う
+          examples:
+            - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+    task:
+      type: object
+      description: タスク
+      required:
+        - id
+        - title
+        - description
+        - status
+        - due_date
+        - user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: タスクID
+          examples:
+            - 1
+        title:
+          type: string
+          description: タイトル
+          examples:
+            - 買い物に行く
+        description:
+          type:
+            - string
+            - 'null'
+          description: 詳細
+          examples:
+            - 牛乳とパンを買う
+        status:
+          type: string
+          enum:
+            - todo
+            - in_progress
+            - done
+          description: 進捗状態
+          examples:
+            - todo
+        due_date:
+          type:
+            - string
+            - 'null'
+          format: date
+          description: 期限日
+          examples:
+            - '2026-07-20'
+        user_id:
+          type: integer
+          description: 担当者のユーザーID
+          examples:
+            - 1
+        created_at:
+          type: string
+          format: date-time
+          description: 作成日時
+          examples:
+            - '2026-08-19T04:54:21.000Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: 更新日時
+          examples:
+            - '2026-08-19T04:54:21.000Z'
+    pagination_meta:
+      type: object
+      description: ページネーション情報
+      required:
+        - current_page
+        - per_page
+        - total_pages
+        - total_count
+        - next_page
+        - prev_page
+      properties:
+        current_page:
+          type: integer
+          description: 現在のページ番号
+          examples:
+            - 1
+        per_page:
+          type: integer
+          description: 1ページあたりの件数
+          examples:
+            - 10
+        total_pages:
+          type: integer
+          description: 総ページ数
+          examples:
+            - 3
+        total_count:
+          type: integer
+          description: 総件数
+          examples:
+            - 25
+        next_page:
+          type:
+            - integer
+            - 'null'
+          description: 次のページ番号。存在しない場合は null
+          examples:
+            - 2
+        prev_page:
+          type:
+            - integer
+            - 'null'
+          description: 前のページ番号。存在しない場合は null
+          examples:
+            - null
+  responses:
+    unauthorized:
+      description: 認証が必要、または認証情報が誤っている
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    unprocessable_content:
+      description: リクエストボディの内容が不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    bad_request:
+      description: リクエストパラメータが不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    not_found:
+      description: リソースが存在しない、または他のユーザーのリソース
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+  parameters:
+    page:
+      name: page
+      in: query
+      description: 取得するページ番号
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      examples:
+        first:
+          value: 1
+    per_page:
+      name: per_page
+      in: query
+      description: 1ページあたりの件数
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+      examples:
+        default:
+          value: 10

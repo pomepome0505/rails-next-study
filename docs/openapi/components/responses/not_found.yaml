@@ -1,0 +1,5 @@
+description: リソースが存在しない、または他のユーザーのリソース
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/error.yaml'

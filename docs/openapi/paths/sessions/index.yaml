@@ -1,0 +1,61 @@
+post:
+  summary: ログインする
+  description: |
+    メールアドレスとパスワードで認証し、セッションを作成する。
+    成功するとセッションIDを含む HttpOnly Cookie が発行される。
+  tags:
+    - Sessions
+  security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              format: email
+              description: メールアドレス。大文字小文字と前後の空白は無視される
+              examples: ["alice@example.com"]
+            password:
+              type: string
+              format: password
+              description: パスワード
+              examples: ["password123"]
+  responses:
+    '201':
+      description: ログイン成功
+      headers:
+        Set-Cookie:
+          description: セッションIDを含む Cookie
+          schema:
+            type: string
+            examples: ["session_id=...; path=/; httponly; samesite=lax"]
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/user.yaml'
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
+    '429':
+      description: 短時間に多数のリクエストを送信した
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/error.yaml'
+
+delete:
+  summary: ログアウトする
+  description: |
+    現在のセッションを破棄する。
+  tags:
+    - Sessions
+  responses:
+    '204':
+      description: ログアウト成功
+    '401':
+      $ref: '../../components/responses/unauthorized.yaml'
