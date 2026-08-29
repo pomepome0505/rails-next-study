@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "lint:compiler": "eslint",
     "format": "biome format --write",
-    "typecheck": "tsc --noEmit",
-    "lint:compiler": "eslint"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "16.3.3",
