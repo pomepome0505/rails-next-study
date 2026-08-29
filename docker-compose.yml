@@ -74,9 +74,21 @@ services:
       - ./docs/openapi.bundled.yaml:/openapi.yaml:ro
     environment:
       SWAGGER_JSON: /openapi.yaml
+  web:
+    build: ./web
+    volumes:
+      - ./web:/app
+      - web_node_modules:/app/node_modules
+      - pnpm_store:/pnpm
+    working_dir: /app
+    ports:
+      - "3001:3000"
+    command: sleep infinity
 
 volumes:
   postgres_data:
   pgadmin_data:
   bundle_data:
   openapi_node_modules:
+  web_node_modules:
+  pnpm_store:
