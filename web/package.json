@@ -10,7 +10,8 @@
     "lint:fix": "biome check --write",
     "lint:compiler": "eslint",
     "format": "biome format --write",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm lint && pnpm lint:compiler && pnpm typecheck"
   },
   "dependencies": {
     "next": "16.3.3",
