@@ -46,7 +46,6 @@ module Authentication
           httponly: true,
           secure: Rails.env.production?,
           same_site: :lax,
-          domain: Rails.env.production? ? ".example.com" : nil,
           path: "/"
         }
       end
@@ -54,6 +53,6 @@ module Authentication
 
     def terminate_session
       Current.session.destroy
-      cookies.delete(:session_id, domain: Rails.env.production? ? ".example.com" : nil)
+      cookies.delete(:session_id)
     end
 end
